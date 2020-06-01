@@ -1,0 +1,64 @@
+# This is a basic workflow to help you get started with Actions
+
+name: build-image
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  watch:
+    types: [started]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build32:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    if: github.actor == github.event.repository.owner.login
+
+    steps:
+       - name: Checkout repository
+         uses: actions/checkout@v2
+       - name: Environment variables
+         run: sudo -E bash -c set
+       - name: Install required packages
+         run: sudo apt-get install git wget unzip libarchive-zip-perl dos2unix xz-utils kpartx
+       - name: Run build.bash rpi
+         run: sudo -E ./build.bash rpi
+       - name: getfilename
+         id: getfilename
+         run: echo "::set-output name=file::$(ls openhabian-*.xz)"
+       - name: Archive
+         uses: actions/upload-artifact@v1.0.0
+         with:
+           # Artifact name
+           name: ${{ steps.getfilename.outputs.file }}
+           # Directory containing files to upload
+           path: ${{ steps.getfilename.outputs.file }}
+  build64experimental:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    if: github.actor == github.event.repository.owner.login
+
+    steps:
+       - name: Checkout repository
+         uses: actions/checkout@v2
+       - name: Environment variables
+         run: sudo -E bash -c set
+       - name: Install required packages
+         run: sudo apt-get install git wget unzip libarchive-zip-perl dos2unix xz-utils kpartx
+       - name: Run build.bash rpi64
+         run: sudo -E ./build.bash rpi64
+       - name: getfilename
+         id: getfilename
+         run: echo "::set-output name=file::$(ls openhabian-*.xz)"
+       - name: Archive
+         uses: actions/upload-artifact@v1.0.0
+         with:
+           # Artifact name
+           name: ${{ steps.getfilename.outputs.file }}
+           # Directory containing files to upload
+           path: ${{ steps.getfilename.outputs.file }}
+
