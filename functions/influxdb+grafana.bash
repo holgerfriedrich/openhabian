@@ -215,6 +215,18 @@ influxdb_install() {
   echo -n "$(timestamp) [openHABian] Setting up InfluxDB service... "
   # Disable authentication, to allow changes in existing installations
   if ! cond_redirect sed -i -e 's|auth-enabled = true|# auth-enabled = false|g' /etc/influxdb/influxdb.conf; then echo "FAILED (disable authentication)"; return 1; fi
+
+  # default storage dir under /var/lib/openhab2/persistence to have it included in zram (if active) and OH backups
+  #if ! cond_redirect mkdir -p -m755 /var/lib/openhab2/persistence/influxdb/data/; then echo "FAILED (storage dir)"; return 1; fi
+  #if ! cond_redirect mkdir -p -m755 /var/lib/openhab2/persistence/influxdb/meta/; then echo "FAILED (storage dir)"; return 1; fi
+  #if ! cond_redirect mkdir -p -m700 /var/lib/openhab2/persistence/influxdb/wal/; then echo "FAILED (storage dir)"; return 1; fi
+  #if ! cond_redirect sed -i -e 's|dir = "/var/lib/influxdb/#dir = "/var/lib/openhab2/persistence/influxdb/|g' /etc/influxdb/influxdb.conf; then echo "FAILED (storage dir)"; return 1; fi
+
+  if  [ -d /var/lib/influxdb/ ]; then
+    if ! cond_redirect mv /var/lib/influxdb/ /var/lib/openhab2/persistence/; then echo "FAILED (storage dir)"; return 1; fi
+    if ! cond_redirect ln -s /var/lib/openhab2/persistence/ /var/lib/influxdb/; then echo "FAILED (storage dir)"; return 1; fi
+  fi
+
   if ! cond_redirect systemctl -q daemon-reload &> /dev/null; then echo "FAILED (daemon-reload)"; return 1; fi
   if cond_redirect systemctl enable --now influxdb.service; then echo "OK"; else echo "FAILED (enable service)"; return 1; fi
 
@@ -253,6 +265,11 @@ grafana_install(){
     echo -n "$(timestamp) [openHABian] Installing Grafana... "
     if ! cond_redirect apt-get update; then echo "FAILED (update apt lists)"; return 1; fi
     if cond_redirect apt-get install --yes grafana; then echo "OK"; else echo "FAILED"; return 1; fi
+  fi
+
+  if [ -d /var/lib/grafana/ ]; then
+    if ! cond_redirect mv /var/lib/grafana/ /var/lib/openhab2/persistence/; then echo "FAILED (storage dir)"; return 1; fi
+    if ! cond_redirect ln -s /var/lib/openhab2/persistence/ /var/lib/grafana/; then echo "FAILED (storage dir)"; return 1; fi
   fi
 
   echo -n "$(timestamp) [openHABian] Setting up Grafana service... "
